@@ -1,0 +1,96 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - '**' # Triggers on push to any branch
+  pull_request:
+    branches:
+      - '**' # Triggers on pull request to any branch
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Type of build to run'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+          - both
+
+jobs:
+  build:
+    name: Build Android App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x gradlew
+
+      - name: Decode Debug Keystore
+        run: |
+          if [ -f "debug.keystore.base64" ]; then
+            echo "Decoding existing debug keystore..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          else
+            echo "No debug.keystore.base64 found, Gradle will auto-generate it."
+          fi
+
+      - name: Create empty .env file if missing
+        run: |
+          if [ ! -f ".env" ]; then
+            echo "Creating empty .env file for secrets plugin..."
+            touch .env
+          fi
+
+      - name: Build with Gradle
+        env:
+          KEYSTORE_PATH: ${{ secrets.KEYSTORE_PATH }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type }}"
+          if [ -z "$BUILD_TYPE" ]; then
+            BUILD_TYPE="debug"
+          fi
+          
+          echo "Selected Build Type: $BUILD_TYPE"
+          
+          if [ "$BUILD_TYPE" = "debug" ]; then
+            ./gradlew assembleDebug
+          elif [ "$BUILD_TYPE" = "release" ]; then
+            if [ -z "${{ secrets.STORE_PASSWORD }}" ]; then
+              echo "⚠️ Release secrets are missing! Falling back to assembleDebug."
+              ./gradlew assembleDebug
+            else
+              ./gradlew assembleRelease
+            fi
+          else
+            ./gradlew assembleDebug
+            if [ -n "${{ secrets.STORE_PASSWORD }}" ]; then
+              ./gradlew assembleRelease
+            else
+              echo "⚠️ Skipping release build because secrets are not set."
+            fi
+          fi
+
+      - name: Find and Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-outputs
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+          if-no-files-found: warn
