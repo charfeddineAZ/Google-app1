@@ -2,37 +2,28 @@ name: Build APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Check Android project
-        run: |
-          if [ ! -f "gradlew" ]; then
-            echo "This repository is not an Android Gradle project."
-            exit 1
-          fi
-
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Build APK
-        run: ./gradlew assembleDebug
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: APK
-          path: "**/*.apk"
+          name: app-apk
+          path: app/build/outputs/apk/debug/*.apk
