@@ -1,41 +1,53 @@
-name: Build with Gradle
+name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
+  workflow_dispatch:  # يتيح لك تشغيل البناء يدوياً من واجهة GitHub
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # يستخدم Node 24 كافتراضي في أحدث الإصدارات
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # 3. (اختياري) عرض معلومات عن الملف للتأكد من سلامته
-      - name: Check wrapper file
-        run: |
-          file gradle/wrapper/gradle-wrapper.jar
-          
-
-      # 4. إعداد Java (اختر الإصدار المناسب لمشروعك)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '17'  # غيّر إلى 11 أو 21 حسب مشروعك
 
-      # 5. منح صلاحية التنفيذ لـ gradlew (ضروري لأنظمة Linux)
-      - name: Make gradlew executable
+      # هذا الإجراء هو الحل السحري:
+      # - يتحقق من صحة gradle-wrapper.jar (يحل مشكلتك السابقة).
+      # - يحمّل Gradle تلقائياً.
+      # - متوافق مع Node 24.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 6. تنفيذ البناء (استخدم build أو أي مهمة أخرى)
-      - name: Build with Gradle
-        run: ./gradlew build 
+      # بناء APK وضع التصحيح (Debug)
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
-      # 7. (اختياري) رفع مخرجات البناء كـ artifacts
-      - name: Upload build artifacts
+      # (اختياري) بناء APK وضع الإصدار (Release) - يحتاج توقيع بالمفاتيح
+      # - name: Build Release APK
+      #   run: ./gradlew assembleRelease
+      #   env:
+      #     SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      #     SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      #     SIGNING_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+
+      # رفع ملف APK الناتج كـ Artifact لتستطيع تحميله
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: build-outputs
-          path: build/libs/
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          # لو بنيت Release غيّر المسار إلى:
+          # path: app/build/outputs/apk/release/*.apk
