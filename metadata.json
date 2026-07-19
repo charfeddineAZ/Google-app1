@@ -1,0 +1,6 @@
+{
+  "name": "Workflow Studio",
+  "description": "An advanced, comprehensive automation workflow editor and execution runner.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
