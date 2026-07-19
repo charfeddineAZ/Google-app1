@@ -23,7 +23,7 @@ jobs:
       - name: Check wrapper file
         run: |
           file gradle/wrapper/gradle-wrapper.jar
-          ls -lh gradle/wrapper/gradle-wrapper.jar
+          
 
       # 4. إعداد Java (اختر الإصدار المناسب لمشروعك)
       - name: Set up JDK 17
@@ -38,7 +38,7 @@ jobs:
 
       # 6. تنفيذ البناء (استخدم build أو أي مهمة أخرى)
       - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build 
 
       # 7. (اختياري) رفع مخرجات البناء كـ artifacts
       - name: Upload build artifacts
