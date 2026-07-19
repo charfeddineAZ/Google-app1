@@ -1,15 +1,20 @@
-name: Build Android APK
+name: Build Android APK (Node 20 - Temporary)
 
 on:
   push:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch:  # يتيح لك تشغيل البناء يدوياً من واجهة GitHub
+  workflow_dispatch:
+
+# 🔑 المفتاح السحري: هذا المتغير البيئي يُجبر GitHub Actions على استخدام Node 20
+# بدلاً من Node 24، رغم أن Node 20 مهمل (استخدام مؤقت فقط).
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # يستخدم Node 24 كافتراضي في أحدث الإصدارات
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -19,35 +24,26 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'  # غيّر إلى 11 أو 21 حسب مشروعك
+          java-version: '17'
 
-      # هذا الإجراء هو الحل السحري:
-      # - يتحقق من صحة gradle-wrapper.jar (يحل مشكلتك السابقة).
-      # - يحمّل Gradle تلقائياً.
-      # - متوافق مع Node 24.
+      # هذا الإجراء سيعمل ضمن بيئة Node 20 بفضل المتغير المحدد أعلاه
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # بناء APK وضع التصحيح (Debug)
+      # بناء APK Debug
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      # (اختياري) بناء APK وضع الإصدار (Release) - يحتاج توقيع بالمفاتيح
+      # (اختياري) بناء Release - علّق عليه إن لم تكن بحاجته
       # - name: Build Release APK
       #   run: ./gradlew assembleRelease
-      #   env:
-      #     SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      #     SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      #     SIGNING_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
 
-      # رفع ملف APK الناتج كـ Artifact لتستطيع تحميله
+      # رفع الملف الناتج
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
-          # لو بنيت Release غيّر المسار إلى:
-          # path: app/build/outputs/apk/release/*.apk
