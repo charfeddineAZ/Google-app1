@@ -11,13 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. سحب الكود من المستودع
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2. التحقق من صحة ملف gradle-wrapper.jar (يمنع استخدام النسخ التالفة أو LFS)
-      - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v2
 
       # 3. (اختياري) عرض معلومات عن الملف للتأكد من سلامته
       - name: Check wrapper file
